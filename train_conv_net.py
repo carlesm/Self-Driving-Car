@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from DataSet import DataSet
 
 '''
 
@@ -26,10 +27,12 @@ npzfile = np.load(input_file_path)
 # training data
 train_predictors = npzfile['train_predictors']
 train_targets = npzfile['train_targets']
+train = DataSet(images=train_predictors,labels=train_targets)
 
 # validation/test data
 validation_predictors = npzfile['validation_predictors']
 validation_targets = npzfile['validation_targets']
+validation = DataSet(images=validation_predictors,labels=validation_targets)
 
 sess = tf.InteractiveSession()
 
@@ -100,12 +103,13 @@ correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 sess.run(tf.initialize_all_variables())
 for i in range(5):
-    predictors, target = next_batch(50, train_predictors, train_targets)
+    batch = train.next_batch(50)
+    #predictors, target = next_batch(50, train_predictors, train_targets)
     if i%100 == 0:
         train_accuracy = accuracy.eval(feed_dict={
-            x:predictors, y_: target, keep_prob: 1.0})
+            x:batch[0], y_: batch[1], keep_prob: 1.0})
     print("step %d, training accuracy %g"%(i, train_accuracy))
-    train_step.run(feed_dict={x: predictors, y_: target, keep_prob: 0.5})
+    train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
 
 print("test accuracy %g"%accuracy.eval(feed_dict={
     x: validation_predictors, y_: validation_targets, keep_prob: 1.0}))
