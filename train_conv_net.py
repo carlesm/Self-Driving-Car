@@ -101,13 +101,28 @@ cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y_conv), reduction_ind
 train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+tf.scalar_summary('accuracy', accuracy)
+merged = tf.merge_all_summaries()
+tfboard_dir = '/Users/ryanzotti/Documents/repos/Self_Driving_RC_Car/tf_visual_data'
+train_writer = tf.train.SummaryWriter(tfboard_dir,sess.graph)
+
+# /Users/ryanzotti/Documents/repos/Self_Driving_RC_Car/tf_visual_data
 sess.run(tf.initialize_all_variables())
 for i in range(5):
     batch = train.next_batch(50)
     #predictors, target = next_batch(50, train_predictors, train_targets)
-    if i%100 == 0:
+    if i%20000 == 0:
         train_accuracy = accuracy.eval(feed_dict={
             x:batch[0], y_: batch[1], keep_prob: 1.0})
+        run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        run_metadata = tf.RunMetadata()
+        summary, _ = sess.run([merged, train_step],
+                              feed_dict={x:batch[0], y_: batch[1], keep_prob: 1.0},
+                              options=run_options,
+                              run_metadata=run_metadata)
+        train_writer.add_run_metadata(run_metadata, 'step%03d' % i)
+        train_writer.add_summary(summary, i)
     print("step %d, training accuracy %g"%(i, train_accuracy))
     train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
 
